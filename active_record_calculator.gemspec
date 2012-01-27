@@ -8,8 +8,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Grady Griffin"]
   s.email       = ["gradyg@izea.com"]
   s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.summary     = %q{ActiveRecord Calculations done faster}
+  s.description = %q{active_record_calculator does groupable aggregate functions in one sql call for better performance}
 
   s.rubyforge_project = "active_record_calculator"
 
@@ -23,9 +23,9 @@ Gem::Specification.new do |s|
   # s.add_runtime_dependency "rest-client"
   if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
     s.add_runtime_dependency('activerecord')
-    s.add_development_dependency "rspec"
+    s.add_development_dependency("rspec")
   else
     s.add_dependency('activerecord')
-    s.add_development_dependency "rspec"
+    s.add_development_dependency("rspec")
   end
 end

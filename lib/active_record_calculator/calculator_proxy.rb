@@ -3,36 +3,42 @@ module ActiveRecordCalculator
     def initialize(klass, finder_options = {})
       @klass = klass
       @operations = []
+      @columns = []
       @finder_options = finder_options.except(:order, :select)
     end
     
-    def cnt(column, as, options = {})
-      add_operation(:count, column, as, options)
+    def col(column_name, as = nil)
+      add_column(column_name, as)
+    end
+    alias :column :col
+    
+    def cnt(column_name, as, options = {})
+      add_operation(:count, column_name, as, options)
     end
     alias :count :cnt
     
-    def sum(column, as, conditions = {})
-      add_operation(:sum, column, as, options)
+    def sum(column_name, as, conditions = {})
+      add_operation(:sum, column_name, as, options)
     end
     
-    def avg(column, as, conditions = {})
-      add_operation(:avg, column, as, options)
+    def avg(column_name, as, conditions = {})
+      add_operation(:avg, column_name, as, options)
     end
     alias :average :avg
     
-    def max(column, as, conditions = {})
-      add_operation(:max, column, as, options)
+    def max(column_name, as, conditions = {})
+      add_operation(:max, column_name, as, options)
     end
     alias :maximum :max
     
-    def min(column, as, conditions = {})
-      add_operation(:min, column, as, options)
+    def min(column_name, as, conditions = {})
+      add_operation(:min, column_name, as, options)
     end
     alias :minimum :min
     
     def calculate
       sql = @klass.send(:construct_finder_sql, @finder_options)
-      sql = gsub(/^SELECT */,build_select)
+      sql.gsub!(/^SELECT \*/, select)
       @operations = []
       @klass.find_by_sql(sql)
     end
@@ -42,14 +48,24 @@ module ActiveRecordCalculator
     end
     
     def select
-      @operations.collect {|op| op.build_select(@klass)}.join(",\n")
+      s = ["SELECT\n"]
+      s += @columns.join(', ') + "\n"
+      s += @operations.collect {|op| op.build_select(@klass)}.join(",\n")
     end
     
     private
     
-    def add_operation(op, column, as, options)
+    def add_column(column_name, as)
+      if as
+        @columns << column_name
+      else
+        @columns << "#{column_name} AS #{as}"
+      end
+    end
+    
+    def add_operation(op, column_name, as, options)
       options = {:conditions => options} if options.is_a?(String) 
-      @operations << Operation.new(op, column, as, options)
+      @operations << Operation.new(op, column_name, as, options)
     end
   end
 end
