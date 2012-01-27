@@ -48,7 +48,7 @@ module ActiveRecordCalculator
     end
     
     def select
-      s = ["SELECT\n"]
+      s = "SELECT\n"
       s += @columns.join(', ') + "\n"
       s += @operations.collect {|op| op.build_select(@klass)}.join(",\n")
     end
