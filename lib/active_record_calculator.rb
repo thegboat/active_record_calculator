@@ -1,4 +1,6 @@
 require "active_record_calculator/version"
+require "active_record_calculator/calculator_proxy"
+require "active_record_calculator/operation"
 
 module ActiveRecordCalculator
   def self.included(base)
