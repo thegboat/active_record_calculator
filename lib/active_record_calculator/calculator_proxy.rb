@@ -17,21 +17,21 @@ module ActiveRecordCalculator
     end
     alias :count :cnt
     
-    def sum(column_name, as, conditions = {})
+    def sum(column_name, as, options = {})
       add_operation(:sum, column_name, as, options)
     end
     
-    def avg(column_name, as, conditions = {})
+    def avg(column_name, as, options = {})
       add_operation(:avg, column_name, as, options)
     end
     alias :average :avg
     
-    def max(column_name, as, conditions = {})
+    def max(column_name, as, options = {})
       add_operation(:max, column_name, as, options)
     end
     alias :maximum :max
     
-    def min(column_name, as, conditions = {})
+    def min(column_name, as, options = {})
       add_operation(:min, column_name, as, options)
     end
     alias :minimum :min
