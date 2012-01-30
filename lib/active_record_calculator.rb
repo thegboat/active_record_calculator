@@ -1,6 +1,8 @@
+require 'active_record'
 require "active_record_calculator/version"
 require "active_record_calculator/calculator_proxy"
 require "active_record_calculator/operation"
+require "bigdecimal"
 
 module ActiveRecordCalculator
   def self.included(base)
