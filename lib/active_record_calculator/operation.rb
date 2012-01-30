@@ -27,6 +27,10 @@ module ActiveRecordCalculator
       "#{@as} => #{@op}"
     end
     
+    def name
+      @as
+    end
+    
     private
     
     def default

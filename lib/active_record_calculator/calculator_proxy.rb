@@ -5,7 +5,7 @@ module ActiveRecordCalculator
       @operations = []
       @columns = []
       @group_operations = []
-      @finder_options = finder_options.except(:order, :select)
+      find(finder_options)
     end
     
     def col(column_name, as = nil)
@@ -37,79 +37,94 @@ module ActiveRecordCalculator
     end
     alias :minimum :min
     
+    def table_name
+      @klass.table_name
+    end
+    
+    def columns
+      @columns
+    end
+    
+    def operations
+      @operations
+    end
+    
+    def group_operations
+      @group_operations
+    end
+    
+    def first_group
+      @group_operations.first.name
+    end
+    
+    def update_key
+      @finder_options[:update_key]
+    end
+    
     def calculate
-      sql = @klass.send(:construct_finder_sql, @finder_options)
-      add_group_operations
-      calculated_data = @klass.connection.select_all(sql)
-      if @finder_options[:group]
-        calculated_data.inject({}) do |all, row|
-          recurse_group(all, row, groupings.dup)
+      result = @klass.connection.select_all(statement)
+      result.collect do |row|
+        @operations.each do |op|
+          row[op.name] = type_cast(row[op.name])
         end
-      else
-        calculated_data
+        row
       end
     end
     
-    def set_finder_options(finder_options = {})
+    def find(finder_options = {})
       finder_options.symbolize_keys!
       @finder_options = finder_options.except(:select, :include, :from, :readonly, :lock)
     end
     
-    def select
-      s = "SELECT\n"
-      s += @group_operations.collect {|op| op.build_select}.join(",\n")
-      s += @columns.join(', ') + "\n"
-      s += @operations.collect {|op| op.build_select(@klass)}.join(",\n")
+    def statement
+      add_group_operations
+      sql = @klass.send(:construct_finder_sql, @finder_options.except(:update_key))
+      sql.gsub(/^SELECT\s+\*/i, select)
     end
     
     private
     
-    def recurse_group(hash, row, grping)
-      current = grping.shift
-      if grping.empty?
-        hash[row[current]] ||= []
-        hash[row[current]] << type_cast(row.except(current))
-      else
-        hash[row[current]] ||= {}
-        recurse_group(hash, row.except(current), grping)
-      end
-      hash
+    def select
+      s = []
+      s += @group_operations.collect {|op| op.build_select}
+      s += @columns.collect {|col| op.build_select}
+      s += @operations.collect {|op| op.build_select(@klass)}
+      "SELECT " + s.join(",\n")
     end
     
     def groupings
       @groupings ||= @group_operations.collect(&:name)
     end
     
-    def type_cast(row)
-      row.keys.inject({}) do |res,col|
-        res[col] = if row[col] =~ /^\d+$/
-           row[col].to_i
-        elsif row[col] =~ /^\d+\.\d+$/
-          BigDecimal(row[col])
-        else
-          row[col]
-        end
-        res
+    def type_cast(data)
+      if data =~ /^\d+$/
+        data.to_i
+      elsif data =~ /^\d+\.\d+$/
+        BigDecimal(data)
+      else
+        data
       end
     end
     
-    def add_column(column_name, as)
-      if as
-        @columns << "#{column_name} AS #{as}"
-      else  
-        @columns << column_name
-      end
+    def add_column(column_name, as) 
+      @columns << Column.new(column_name,as)
     end
     
     def add_group_operations
+      @group_operations = []
       return unless @finder_options[:group]
       group_attrs = @finder_options[:group].to_s.split(',')
+      if @finder_options[:for_update]
+        @finder_options[:group] = group_attrs.first
+        group_attrs = [group_attrs.first]
+      end
       group_attrs.each do |grp|
         grp.downcase!
         grp.strip!
         grp_alias = "grp_#{grp.gsub('.', '_')}"
         @group_operations << GroupOperation.new(grp, grp_alias)
       end
+      @group_operations.uniq!
     end
     
     def add_operation(op, column_name, as, options)

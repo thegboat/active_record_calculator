@@ -16,12 +16,16 @@ module ActiveRecordCalculator
       calculator.calculate
     end
     
-    def new_calculator
-      CalculatorProxy.new(self)
+    def update_many(update_klass, options = {}, &blk)
+      options.merge!(:for_update => true)
+      calculator = CalculatorProxy.new(self, options)
+      yield calculator
+      updater = UpdaterProxy.new(update_klass,calculator)
+      updater.update
     end
     
-    def update_many(update_klass, options = {}, &blk)
-      calculator = CalculatorProxy.new(self, options)
+    def new_calculator
+      CalculatorProxy.new(self)
     end
   end
 end
