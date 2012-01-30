@@ -14,8 +14,12 @@ module ActiveRecordCalculator
       calculator.calculate
     end
     
-    def calculator
+    def new_calculator
       CalculatorProxy.new(self)
+    end
+    
+    def update_many(update_klass, options = {}, &blk)
+      calculator = CalculatorProxy.new(self, options)
     end
   end
 end
