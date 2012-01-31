@@ -1,48 +1,62 @@
 module ActiveRecordCalculator
   class UpdaterProxy
-    def initialize(klass, calculator)
-      @klass = klass
-      @calculator = calculator
+    def initialize(table, foreign_key, calculator_proxy)
+      @table = table
+      set_calculator(calculator_proxy)
+      @key = foreign_key
       valid_columns?
       valid_update_key?
     end
     
     def statement
-      start = %{UPDATE #{update_table}
+      start = %{UPDATE #{table}
       INNER JOIN
       (#{calculator.statement}
-      ) AS sub_#{subquery_table} ON sub_#{subquery_table}.#{calculator.first_group} = #{update_table}.#{calculator.update_key}
+      ) AS sub_#{subquery_table} ON sub_#{subquery_table}.group_column_1 = #{table}.#{key}
       SET\n}
       start += calculation_columns.collect do |col|
-        "#{update_table}.#{col} = #{subquery_table}.#{col}"
+        "#{table}.#{col} = sub_#{subquery_table}.#{col}"
       end.join(",\n")
       start
     end
     
-    def update
-      @klass.connection.update(statement)
-    end
-    
     private
     
-    def update_table
-      klass.table_name
+    def connection
+      calculator.connection
+    end
+    
+    def calculator
+      @calculator
+    end
+    
+    def key
+      "#{remove_table(@key)}"
+    end
+    
+    def set_calculator(calculator_proxy)
+      calculator_proxy.send(:add_group_operations)
+      @calculator = calculator_proxy
+    end
+    
+    def table
+      @table
     end
     
     def subquery_table
       calculator.table_name
     end
     
-    def update_klass_columns
-      @update_klass_columns ||= @klass.connection.columns(update_table).collect {|obj| obj.name.to_s}
+    def update_columns
+      @update_columns ||= connection.columns(table).collect {|obj| obj.name.to_s}
     end
     
     def calculation_columns
-      @calculation_columns ||= (calculator.columns + calculator.operation.collect(&:name))
+      @calculation_columns ||= (calculator.columns + calculator.operations.collect(&:name))
     end
     
     def invalid_columns
-      @invalid_columns ||= calculation_columns - update_klass_columns
+      @invalid_columns ||= calculation_columns - update_columns
     end
     
     def invalid_columns_sentence
@@ -63,9 +77,8 @@ module ActiveRecordCalculator
     end
     
     def valid_update_key?
-      @update_key = remove_table(calculator.update_key || calculator.first_group)
-      unless @update_key and update_klass_columns.include?(@update_key)
-        raise NoUpdateKeyError, "No valid update key was provided for table #{update_table}"
+      unless calculator.update_key
+        raise NoUpdateKeyError, "No valid update key was provided for table #{subquery_table}"
       end
       true
     end

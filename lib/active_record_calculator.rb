@@ -1,7 +1,11 @@
 require 'active_record'
 require "active_record_calculator/version"
 require "active_record_calculator/calculator_proxy"
+require "active_record_calculator/updater_proxy"
 require "active_record_calculator/operation"
+require "active_record_calculator/group_operation"
+require "active_record_calculator/column"
+require "active_record_calculator/error"
 require "bigdecimal"
 
 module ActiveRecordCalculator
@@ -10,22 +14,10 @@ module ActiveRecordCalculator
   end
   
   module ClassMethods
-    def calculate_many(options = {}, &blk)
-      calculator = CalculatorProxy.new(self, options)
-      yield calculator
-      calculator.calculate
-    end
-    
-    def update_many(update_klass, options = {}, &blk)
-      options.merge!(:for_update => true)
-      calculator = CalculatorProxy.new(self, options)
-      yield calculator
-      updater = UpdaterProxy.new(update_klass,calculator)
-      updater.update
-    end
-    
-    def new_calculator
-      CalculatorProxy.new(self)
+    def calculator(options = {}, &blk)
+      c = CalculatorProxy.new(self, options)
+      yield c if blk
+      c
     end
   end
 end

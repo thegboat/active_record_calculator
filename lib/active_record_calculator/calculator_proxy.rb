@@ -53,22 +53,34 @@ module ActiveRecordCalculator
       @group_operations
     end
     
-    def first_group
-      @group_operations.first.name
-    end
-    
     def update_key
-      @finder_options[:update_key]
+      @group_operations.first ? @group_operations.first.name : nil
     end
     
     def calculate
-      result = @klass.connection.select_all(statement)
+      result = select_all(statement)
       result.collect do |row|
         @operations.each do |op|
           row[op.name] = type_cast(row[op.name])
         end
         row
       end
+    end
+    
+    def connection
+      @klass.connection
+    end
+    
+    def select_all(query)
+      connection.select_all(query)
+    end
+    
+    def update(table, foreign_key)
+      unless connection.adapter_name =~ /^mysql/i
+        raise UnsupportedAdapterError, "Updates with the database adapter is not supported."
+      end
+      updater = UpdaterProxy.new(table, foreign_key, self)
+      updater
     end
     
     def find(finder_options = {})
@@ -118,10 +130,10 @@ module ActiveRecordCalculator
         @finder_options[:group] = group_attrs.first
         group_attrs = [group_attrs.first]
       end
-      group_attrs.each do |grp|
+      group_attrs.each_with_index do |grp, i|
         grp.downcase!
         grp.strip!
-        grp_alias = "grp_#{grp.gsub('.', '_')}"
+        grp_alias = "group_column_#{i+1}"
         @group_operations << GroupOperation.new(grp, grp_alias)
       end
       @group_operations.uniq!
