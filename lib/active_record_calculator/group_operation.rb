@@ -11,11 +11,11 @@ module ActiveRecordCalculator
     end
     
     def inspect
-      @column
+      @column.to_s
     end
     
     def name
-      @as
+      @as.to_s
     end
   end
 end

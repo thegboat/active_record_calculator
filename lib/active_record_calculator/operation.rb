@@ -28,7 +28,11 @@ module ActiveRecordCalculator
     end
     
     def name
-      @as
+      @as.to_s
+    end
+    
+    def op
+      @op
     end
     
     private

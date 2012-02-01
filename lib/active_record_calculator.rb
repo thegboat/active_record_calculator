@@ -19,6 +19,15 @@ module ActiveRecordCalculator
       yield c if blk
       c
     end
+    
+    def updater(table, key, options = {}, &blk)
+      if connection.adapter_name =~ /^sqlite/i
+        raise UnsupportedAdapterError, "Updates with the database adapter is not supported."
+      end
+      c = CalculatorProxy.new(self, options)
+      yield c if blk
+      UpdaterProxy.new(table, key, c)
+    end
   end
 end
 

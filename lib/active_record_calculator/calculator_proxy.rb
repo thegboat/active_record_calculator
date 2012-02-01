@@ -37,7 +37,7 @@ module ActiveRecordCalculator
     end
     alias :minimum :min
     
-    def table_name
+    def table
       @klass.table_name
     end
     
@@ -75,14 +75,6 @@ module ActiveRecordCalculator
       connection.select_all(query)
     end
     
-    def update(table, foreign_key)
-      unless connection.adapter_name =~ /^mysql/i
-        raise UnsupportedAdapterError, "Updates with the database adapter is not supported."
-      end
-      updater = UpdaterProxy.new(table, foreign_key, self)
-      updater
-    end
-    
     def find(finder_options = {})
       finder_options.symbolize_keys!
       @finder_options = finder_options.except(:select, :include, :from, :readonly, :lock)
@@ -90,7 +82,7 @@ module ActiveRecordCalculator
     
     def statement
       add_group_operations
-      sql = @klass.send(:construct_finder_sql, @finder_options.except(:update_key))
+      sql = @klass.send(:construct_finder_sql, @finder_options)
       sql.gsub(/^SELECT\s+\*/i, select)
     end
     

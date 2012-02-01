@@ -9,18 +9,73 @@ module ActiveRecordCalculator
     end
     
     def statement
-      start = %{UPDATE #{table}
+      case connection.adapter_name
+      when /mysql/i then mysql_statement
+      when /postgresql/i then psql_statement
+      else abstract_statement
+      end
+    end
+    
+    def update
+      connection.update(statement)
+    end
+    
+    def col(column_name, as = nil)
+      calculator.col(column_name, as)
+    end
+    alias :column :col
+    
+    def cnt(column_name, as, options = {})
+      calculator.count(column_name, as, options)
+    end
+    alias :count :cnt
+    
+    def sum(column_name, as, options = {})
+      calculator.sum(column_name, as, options)
+    end
+    
+    def avg(column_name, as, options = {})
+      calculator.avg(column_name, as, options)
+    end
+    alias :average :avg
+    
+    def max(column_name, as, options = {})
+      calculator.max(column_name, as, options)
+    end
+    alias :maximum :max
+    
+    def min(column_name, as, options = {})
+      calculator.min(column_name, as, options)
+    end
+    alias :minimum :min
+    
+    private
+    
+    def mysql_statement
+      sql = %{UPDATE #{table}
       INNER JOIN
       (#{calculator.statement}
       ) AS sub_#{subquery_table} ON sub_#{subquery_table}.group_column_1 = #{table}.#{key}
       SET\n}
-      start += calculation_columns.collect do |col|
+      sql += calculation_columns.collect do |col|
         "#{table}.#{col} = sub_#{subquery_table}.#{col}"
       end.join(",\n")
-      start
+      sql
     end
     
-    private
+    def psql_statement
+      abstract_statement.gsub(/^UPDATE/, "UPDATE ONLY")
+    end
+    
+    def abstract_statement
+      sql = "UPDATE #{table} SET\n"
+      sql += calculation_columns.collect do |col|
+        "#{table}.#{col} = sub_#{subquery_table}.#{col}"
+      end.join(",\n")
+      sql += "\nFROM #{table}, (#{calculator.statement}) AS sub_#{subquery_table}\n"
+      sql += "WHERE sub_#{subquery_table}.group_column_1 = #{table}.#{key}"
+      sql
+    end
     
     def connection
       calculator.connection
@@ -44,7 +99,7 @@ module ActiveRecordCalculator
     end
     
     def subquery_table
-      calculator.table_name
+      calculator.table
     end
     
     def update_columns
@@ -68,7 +123,7 @@ module ActiveRecordCalculator
     end
     
     def valid_columns?
-      raise InvalidColumnError, "Can not resolve update column(s) #{invalid_columns.to_sentence} for table #{update_table}" unless invalid_columns.empty?
+      raise InvalidColumnError, "Can not resolve update column(s) #{invalid_columns.to_sentence} for table #{table}" unless invalid_columns.empty?
       true
     end
     
