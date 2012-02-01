@@ -45,17 +45,14 @@ Example:
 
 You can use statement to see the sql created
 
-The calculator can be used for fast direct sql updates.  A calculator needs to be created where all the operations have aliases
-that have a respective column name in the update table:
+The updater can be used for fast direct sql updates.  An updater needs to be created where all the operations have aliases that have a respective column name in the update table.  The first two arguments are the update table and the key to join.  The key is joined with the first group column which is also required.
 
-  calculator = Purchases.calculator(:conditions => "created_at > '2011-07-01'", :group => "user_id")
-  calculator.count :id, "total_purchases"
-  calculator.cnt :id, "expensive_purchases", "price > 100"
-  calculator.sum :price, "cheap_spending", "price < 100"
-  calculator.avg :price, "cheap_average", "price < 100"
-  calculator.min :price, "least_purchase"
-  calculator.max :price, "most_purchase"
+  updater = Purchases.updater(:purchase_history, :user_id, :conditions => "created_at > '2011-07-01'", :group => "user_id")
+  updater.count :id, "total_purchases"
+  updater.cnt :id, "expensive_purchases", "price > 100"
+  updater.sum :price, "cheap_spending", "price < 100"
+  updater.avg :price, "cheap_average", "price < 100"
+  updater.min :price, "least_purchase"
+  updater.max :price, "most_purchase"
   
-  calculator.update(:purchase_history, :user_id) #the tables are joined by the second argument and the first grouping column
-  
-Update only works with mysql adapters currently
+Update should work with all ActiveRecord supported databases except sqlite
