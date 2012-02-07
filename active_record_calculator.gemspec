@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = ActiveRecordCalculator::VERSION
   s.authors     = ["Grady Griffin"]
   s.email       = ["gradyg@izea.com"]
-  s.homepage    = ""
+  s.homepage    = "https://github.com/thegboat/active_record_calculator"
   s.summary     = %q{ActiveRecord Calculations done faster}
   s.description = %q{active_record_calculator does groupable aggregate functions in one sql call for better performance}
 
@@ -22,10 +22,12 @@ Gem::Specification.new do |s|
   # s.add_development_dependency "rspec"
   # s.add_runtime_dependency "rest-client"
   if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-    s.add_runtime_dependency('activerecord', ">=0")
+    s.add_runtime_dependency('activerecord', "<3.0.0")
     s.add_development_dependency("rspec")
+    s.add_development_dependency("mysql")
   else
-    s.add_dependency('activerecord', ">=0")
+    s.add_dependency('activerecord', "<3.0.0")
     s.add_development_dependency("rspec")
+    s.add_development_dependency("mysql")
   end
 end

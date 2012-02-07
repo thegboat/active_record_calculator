@@ -107,11 +107,11 @@ module ActiveRecordCalculator
     end
     
     def calculation_columns
-      @calculation_columns ||= (calculator.columns + calculator.operations.collect(&:name))
+      calculator.columns.collect(&:alias_name) + calculator.operations.collect(&:name)
     end
     
     def invalid_columns
-      @invalid_columns ||= calculation_columns - update_columns
+      calculation_columns - update_columns
     end
     
     def invalid_columns_sentence

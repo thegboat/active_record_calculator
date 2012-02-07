@@ -82,8 +82,7 @@ module ActiveRecordCalculator
     
     def statement
       add_group_operations
-      sql = @klass.send(:construct_finder_sql, @finder_options)
-      sql.gsub(/^SELECT\s+\*/i, select)
+      construct_finder_sql.gsub(/^SELECT\s+\*/i, select)
     end
     
     private
@@ -118,10 +117,6 @@ module ActiveRecordCalculator
       @group_operations = []
       return unless @finder_options[:group]
       group_attrs = @finder_options[:group].to_s.split(',')
-      if @finder_options[:for_update]
-        @finder_options[:group] = group_attrs.first
-        group_attrs = [group_attrs.first]
-      end
       group_attrs.each_with_index do |grp, i|
         grp.downcase!
         grp.strip!
@@ -134,6 +129,24 @@ module ActiveRecordCalculator
     def add_operation(op, column_name, as, options)
       options = {:conditions => options} if options.is_a?(String) 
       @operations << Operation.new(op, column_name, as, options)
+    end
+    
+    def construct_finder_sql
+      @klass.send(:construct_finder_sql, @finder_options)
+    end
+    
+    # def sanitized_finder_params
+    #   @finder_options[:conditions] = sanitize_sql_for_conditions(@finder_options[:conditions]) if @finder_options[:conditions]
+    #   @finder_options[:group] = sanitize_sql(@finder_options[:group]) if @finder_options[:group]
+    #   @finder_options[:having] = sanitize_sql(@finder_options[:having]) if @finder_options[:having]
+    # end
+    
+    def sanitize_sql(ary)
+      ActiveRecord::Base.sanitize_sql(ary, table)
+    end
+    
+    def sanitize_sql_for_conditions(condition)
+      ActiveRecord::Base.sanitize_sql_for_conditions(condition, table)
     end
   end
 end
