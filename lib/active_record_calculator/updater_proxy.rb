@@ -115,15 +115,20 @@ module ActiveRecordCalculator
     end
     
     def invalid_columns_sentence
-      start = invalid_columns[0..-2].join(', ')
-      if invalid_columns.length > 1
-        start += ' and ' + invalid_columns[-1..-1].to_s
+      case invalid_columns.length
+      when 0
+        ""
+      when 1
+        invalid_columns[0].to_s
+      when 2
+        "#{invalid_columns[0]} and #{invalid_columns[1]}"
+      else
+        "#{invalid_columns[0...-1].join(', ')} and #{invalid_columns[-1]}"
       end
-      start
     end
     
     def valid_columns?
-      raise InvalidColumnError, "Can not resolve update column(s) #{invalid_columns.to_sentence} for table #{table}" unless invalid_columns.empty?
+      raise InvalidColumnError, "Can not resolve update column(s) #{invalid_columns_sentence} for table #{table}" unless invalid_columns.empty?
       true
     end
     

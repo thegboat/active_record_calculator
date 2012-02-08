@@ -4,7 +4,7 @@ require "active_record_calculator/version"
 
 Gem::Specification.new do |s|
   s.name        = "active_record_calculator"
-  s.version     = ActiveRecordCalculator::VERSION
+  s.version     = ActiveRecordCalculator::VERSION::STRING
   s.authors     = ["Grady Griffin"]
   s.email       = ["gradyg@izea.com"]
   s.homepage    = "https://github.com/thegboat/active_record_calculator"
